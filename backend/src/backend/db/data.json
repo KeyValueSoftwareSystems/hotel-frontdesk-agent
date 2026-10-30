@@ -10,8 +10,19 @@
         "TV",
         "Mini-fridge"
       ],
+      "not_included": [
+        "Coffee maker",
+        "In-room safe"
+      ],
       "max_occupancy": 2,
-      "total_units": 5
+      "total_units": 5,
+      "room_numbers": [
+        "201",
+        "202",
+        "203",
+        "204",
+        "205"
+      ]
     },
     {
       "id": "rt-deluxe",
@@ -25,7 +36,12 @@
         "In-room safe"
       ],
       "max_occupancy": 3,
-      "total_units": 3
+      "total_units": 3,
+      "room_numbers": [
+        "301",
+        "302",
+        "303"
+      ]
     },
     {
       "id": "rt-suite",
@@ -40,7 +56,11 @@
         "Balcony"
       ],
       "max_occupancy": 4,
-      "total_units": 2
+      "total_units": 2,
+      "room_numbers": [
+        "501",
+        "502"
+      ]
     }
   ],
   "rate_plans": [
@@ -116,6 +136,10 @@
       "private": true
     }
   ],
+  "hotel": {
+    "facilities": ["Restaurant (breakfast as a paid add-on)", "Parking (paid add-on)", "24-hour front desk", "Housekeeping"],
+    "not_offered": ["Pool", "Gym", "Spa"]
+  },
   "addons": [
     {
       "id": "ad-pet",
@@ -455,5 +479,19 @@
       "active": true
     }
   ],
+  "housekeeping": {
+    "slots": [
+      "09:00",
+      "10:00",
+      "11:00",
+      "12:00",
+      "13:00",
+      "14:00",
+      "15:00",
+      "16:00"
+    ],
+    "capacity_per_slot": 2
+  },
+  "housekeeping_requests": [],
   "confirmation_emails": []
 }

@@ -11,6 +11,8 @@ class Settings(BaseSettings):
     openai_base_url: str | None = None
     netra_prompt_label: str = "production"
     cors_origins: list[str] = ["*"]
+    # Deliberate bug for the L1 demo: room-number changes are reported as done but never saved.
+    demo_room_move_bug: bool = True
 
 
 @lru_cache

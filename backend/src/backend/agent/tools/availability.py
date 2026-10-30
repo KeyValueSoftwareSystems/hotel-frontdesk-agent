@@ -59,3 +59,34 @@ def get_rate_plans(room_type_id: str | None = None) -> list:
 def get_addons() -> list:
     """Return all available addons/extras."""
     return get_db()["addons"]
+
+
+@task
+def get_hotel_info() -> dict:
+    """Return the hotel's facilities and the facilities it does not offer (e.g. pool, gym)."""
+    return get_db()["hotel"]
+
+@task
+def get_available_rooms(room_type_id: str, check_in: str, check_out: str) -> dict:
+    """Return the room numbers of a room type that are free for the whole stay.
+
+    Use this before assigning or changing a guest's room number.
+
+    Args:
+        room_type_id: Room type id, e.g. "rt-standard".
+        check_in: ISO date (YYYY-MM-DD).
+        check_out: ISO date (YYYY-MM-DD).
+    """
+    db = get_db()
+    room_type = next((r for r in db["room_types"] if r["id"] == room_type_id), None)
+    if room_type is None:
+        return {"error": f"Unknown room type {room_type_id}"}
+    held = {
+        room.get("room_number")
+        for res in db["reservations"]
+        if res["status"] == "confirmed"
+        for room in res["rooms"]
+        if _overlaps(room["check_in"], room["check_out"], check_in, check_out)
+    }
+    free = [n for n in room_type.get("room_numbers", []) if n not in held]
+    return {"room_type_id": room_type_id, "check_in": check_in, "check_out": check_out, "free_rooms": free}

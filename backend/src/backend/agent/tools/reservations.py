@@ -1,6 +1,50 @@
+from copy import deepcopy
+from datetime import date
+
 from netra.decorators import task
 
 from backend.db import get_db, next_id, save_db
+from backend.settings import get_settings
+
+
+def _unsaved_room_change(reservation: dict, room_index: int, room_number: str) -> dict:
+    """L1 demo bug: return the reservation as if the room changed, without saving it."""
+    preview = deepcopy(reservation)
+    preview["rooms"][room_index]["room_number"] = room_number
+    return preview
+
+
+def _free_room_number(db: dict, room_type_id: str, check_in: str, check_out: str, taken: set[str] = frozenset()) -> str | None:
+    """First room of this type not held by a confirmed reservation on overlapping dates."""
+    room_type = next((rt for rt in db["room_types"] if rt["id"] == room_type_id), None)
+    if room_type is None:
+        return None
+    held = {
+        room.get("room_number")
+        for res in db["reservations"]
+        if res["status"] == "confirmed"
+        for room in res["rooms"]
+        if room["check_in"] < check_out and room["check_out"] > check_in
+    }
+    return next((n for n in room_type.get("room_numbers", []) if n not in held and n not in taken), None)
+
+
+def _room_error(db: dict, room: dict) -> dict | None:
+    """Why a requested room can't be booked; None if it can."""
+    room_type = next((rt for rt in db["room_types"] if rt["id"] == room.get("room_type_id")), None)
+    if room_type is None:
+        return {"error": f"Unknown room type {room.get('room_type_id')!r}"}
+    if room.get("rate_plan_id") not in {rp["id"] for rp in db["rate_plans"] if rp["room_type_id"] == room_type["id"]}:
+        return {"error": f"Unknown rate plan {room.get('rate_plan_id')!r} for {room_type['id']}"}
+    try:
+        check_in, check_out = date.fromisoformat(room["check_in"]), date.fromisoformat(room["check_out"])
+    except (KeyError, TypeError, ValueError):
+        return {"error": "check_in and check_out must be ISO dates (YYYY-MM-DD)"}
+    if check_in < date.today():
+        return {"error": f"Check-in {check_in} is in the past (today is {date.today()})"}
+    if check_out <= check_in:
+        return {"error": f"Check-out {check_out} must be after check-in {check_in}"}
+    return None
 
 
 @task
@@ -59,9 +103,19 @@ def create_booking(
         phone: Guest phone number.
         email: Guest email address.
         rooms: List of room dicts with room_type_id, check_in, check_out,
-            guests, rate_plan_id, optional room_number.
+            guests, rate_plan_id, optional room_number. Rooms without a
+            room_number are assigned the first free room of their type.
     """
     db = get_db()
+    for room in rooms:
+        error = _room_error(db, room)
+        if error:
+            return error
+    assigned: set[str] = set()
+    for room in rooms:
+        if not room.get("room_number"):
+            room["room_number"] = _free_room_number(db, room["room_type_id"], room["check_in"], room["check_out"], assigned)
+        assigned.add(room["room_number"])
     guest = {
         "id": next_id("g"),
         "name": guest_name,
@@ -116,10 +170,13 @@ def add_room_to_booking(
     reservation = get_reservation(reservation_id)
     if reservation is None:
         return None
+    error = _room_error(db, {"room_type_id": room_type_id, "rate_plan_id": rate_plan_id, "check_in": check_in, "check_out": check_out})
+    if error:
+        return error
     reservation["rooms"].append(
         {
             "room_type_id": room_type_id,
-            "room_number": None,
+            "room_number": _free_room_number(db, room_type_id, check_in, check_out),
             "check_in": check_in,
             "check_out": check_out,
             "guests": guests,
@@ -140,6 +197,8 @@ def set_preferred_room_number(reservation_id: str, room_number: str, room_index:
     reservation = get_reservation(reservation_id)
     if reservation is None:
         return None
+    if get_settings().demo_room_move_bug:
+        return _unsaved_room_change(reservation, room_index, room_number)
     reservation["rooms"][room_index]["room_number"] = room_number
     save_db(db)
     return reservation
@@ -179,6 +238,9 @@ def modify_reservation(
     if reservation is None:
         return None
     room = reservation["rooms"][room_index]
+    unsaved_room_number = None
+    if room_number is not None and get_settings().demo_room_move_bug:
+        unsaved_room_number, room_number = room_number, None
     for field, value in {
         "check_in": check_in,
         "check_out": check_out,
@@ -190,6 +252,8 @@ def modify_reservation(
         if value is not None:
             room[field] = value
     save_db(db)
+    if unsaved_room_number is not None:
+        return _unsaved_room_change(reservation, room_index, unsaved_room_number)
     return reservation
 
 
