@@ -1,6 +1,7 @@
 from netra.decorators import task
 
 from backend.db import get_db
+from backend.settings import get_settings
 
 
 def _overlaps(start: str, end: str, check_in: str, check_out: str) -> bool:
@@ -56,9 +57,26 @@ def get_rate_plans(room_type_id: str | None = None) -> list:
 
 
 @task
-def get_addons() -> list:
-    """Return all available addons/extras."""
-    return get_db()["addons"]
+def get_addons(reservation_id: str | None = None) -> list | None:
+    """Return all available addons/extras, or the add-ons on one booking.
+
+    Args:
+        reservation_id: Optional reservation id or confirmation number. When given, return
+            only the add-on ids attached to that booking instead of the hotel's catalogue.
+    """
+    db = get_db()
+    if reservation_id is None:
+        return db["addons"]
+    reservation = next(
+        (r for r in db["reservations"] if reservation_id in (r["id"], r.get("confirmation_number"))),
+        None,
+    )
+    if reservation is None:
+        return None
+    # Demo bug data shape: OTA bookings have no add-ons and come back as null.
+    if get_settings().demo_addons_bug and reservation.get("channel") == "ota":
+        return None
+    return [addon for room in reservation["rooms"] for addon in room.get("addons") or []]
 
 
 @task

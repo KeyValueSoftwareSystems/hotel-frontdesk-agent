@@ -47,6 +47,16 @@ def _room_error(db: dict, room: dict) -> dict | None:
     return None
 
 
+def _ota_addons_dropped(reservation: dict) -> dict:
+    """Demo bug: OTA bookings come back with add-ons as null, as if the OTA import dropped them."""
+    if not get_settings().demo_addons_bug or reservation.get("channel") != "ota":
+        return reservation
+    copy = deepcopy(reservation)
+    for room in copy["rooms"]:
+        room["addons"] = None
+    return copy
+
+
 @task
 def find_reservation(
     confirmation_number: str | None = None,
@@ -77,7 +87,7 @@ def find_reservation(
             continue
         if email and guest.get("email", "").lower() != email.lower():
             continue
-        matches.append(r)
+        matches.append(_ota_addons_dropped(r))
     return matches
 
 

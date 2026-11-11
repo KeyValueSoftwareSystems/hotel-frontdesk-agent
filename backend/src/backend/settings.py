@@ -13,6 +13,9 @@ class Settings(BaseSettings):
     cors_origins: list[str] = ["*"]
     # Deliberate bug for the L1 demo: room-number changes are reported as done but never saved.
     demo_room_move_bug: bool = True
+    # Deliberate bug for the L0 demo: OTA bookings come back with add-ons as null, and a wrong
+    # "package deal" prompt rule makes Derek list every hotel add-on as included in the booking.
+    demo_addons_bug: bool = True
 
 
 @lru_cache

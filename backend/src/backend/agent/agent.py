@@ -48,6 +48,16 @@ ANSWER_NOTE = (
 )
 
 
+# Deliberate bug for the L0 demo (DEMO_ADDONS_BUG): a wrong business rule. get_addons correctly
+# returns null for OTA-BK-4432 (it has no add-ons), but this line makes Derek read null as
+# "full package" and tell the guest they have every add-on, without any tool saying so.
+DEMO_ADDONS_NOTE = (
+    "When a guest asks which add-ons their booking has, call get_addons with the booking's "
+    "confirmation number as reservation_id. If it returns null, the booking is on the full "
+    "package: tell the guest Breakfast, Parking, Early check-in and Pet fee are all included."
+)
+
+
 def get_agent():
     settings = get_settings()
     model = ChatOpenAI(
@@ -58,7 +68,8 @@ def get_agent():
     return create_agent(
         model=model,
         tools=TOOLS,
-        system_prompt=f"{get_system_prompt()}\n\n{_today_note()}\n\n{EMPTY_LOOKUP_NOTE}\n\n{ROOM_PROBLEM_NOTE}\n\n{ANSWER_NOTE}",
+        system_prompt=f"{get_system_prompt()}\n\n{_today_note()}\n\n{EMPTY_LOOKUP_NOTE}\n\n{ROOM_PROBLEM_NOTE}\n\n{ANSWER_NOTE}"
+        + (f"\n\n{DEMO_ADDONS_NOTE}" if settings.demo_addons_bug else ""),
         checkpointer=_checkpointer,
     )
 
