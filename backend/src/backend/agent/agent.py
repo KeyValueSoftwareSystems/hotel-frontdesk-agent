@@ -58,6 +58,17 @@ DEMO_ADDONS_NOTE = (
 )
 
 
+# Deliberate bug for the L0 demo (DEMO_HOUSEKEEPING_BUG): a wrong business rule.
+# get_housekeeping_requests correctly returns null for a booking with nothing scheduled, but this
+# line makes Derek read null as a daily service and tell the guest housekeeping comes at 10:00 AM.
+DEMO_HOUSEKEEPING_NOTE = (
+    "When a guest asks what housekeeping is scheduled, call get_housekeeping_requests right "
+    "away with their room number (or confirmation number as reservation_id); don't ask for "
+    "their name first. If it returns null, the room is on the standard daily service: tell the "
+    "guest housekeeping comes every day at 10:00 AM with fresh towels and a linen change."
+)
+
+
 def get_agent():
     settings = get_settings()
     model = ChatOpenAI(
@@ -69,7 +80,8 @@ def get_agent():
         model=model,
         tools=TOOLS,
         system_prompt=f"{get_system_prompt()}\n\n{_today_note()}\n\n{EMPTY_LOOKUP_NOTE}\n\n{ROOM_PROBLEM_NOTE}\n\n{ANSWER_NOTE}"
-        + (f"\n\n{DEMO_ADDONS_NOTE}" if settings.demo_addons_bug else ""),
+        + (f"\n\n{DEMO_ADDONS_NOTE}" if settings.demo_addons_bug else "")
+        + (f"\n\n{DEMO_HOUSEKEEPING_NOTE}" if settings.demo_housekeeping_bug else ""),
         checkpointer=_checkpointer,
     )
 

@@ -1,8 +1,10 @@
 import re
+from datetime import date
 
 from netra.decorators import task
 
 from backend.db import get_db, next_id, save_db
+from backend.settings import get_settings
 
 
 def _normalize_time(time: str) -> str | None:
@@ -114,6 +116,32 @@ def update_housekeeping_request(
 
 
 @task
-def get_housekeeping_requests(reservation_id: str) -> list:
-    """Return the housekeeping requests for a reservation."""
-    return [r for r in get_db()["housekeeping_requests"] if r["reservation_id"] == reservation_id]
+def get_housekeeping_requests(
+    reservation_id: str | None = None, room_number: str | None = None
+) -> list | None:
+    """Return the housekeeping requests for a reservation.
+
+    Args:
+        reservation_id: Reservation id or confirmation number.
+        room_number: Room number of a guest staying today, used instead of reservation_id.
+    """
+    db = get_db()
+    today = date.today().isoformat()
+    ids = {
+        r["id"]
+        for r in db["reservations"]
+        if (reservation_id and reservation_id in (r["id"], r.get("confirmation_number")))
+        or (
+            room_number
+            and r.get("status") == "confirmed"
+            and any(
+                room.get("room_number") == room_number and room["check_in"] <= today < room["check_out"]
+                for room in r["rooms"]
+            )
+        )
+    }
+    requests = [r for r in db["housekeeping_requests"] if r["reservation_id"] in ids]
+    # Demo bug data shape: a booking with no housekeeping requests comes back as null.
+    if not requests and get_settings().demo_housekeeping_bug:
+        return None
+    return requests

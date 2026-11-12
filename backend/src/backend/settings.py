@@ -16,6 +16,9 @@ class Settings(BaseSettings):
     # Deliberate bug for the L0 demo: OTA bookings come back with add-ons as null, and a wrong
     # "package deal" prompt rule makes Derek list every hotel add-on as included in the booking.
     demo_addons_bug: bool = True
+    # Deliberate bug for the L0 demo: a booking with no housekeeping requests comes back as null,
+    # and a wrong prompt rule makes Derek say daily 10:00 AM housekeeping is scheduled.
+    demo_housekeeping_bug: bool = True
 
 
 @lru_cache
