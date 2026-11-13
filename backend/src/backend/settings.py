@@ -22,6 +22,9 @@ class Settings(BaseSettings):
     # Deliberate bug for the L1 demo: a discount code is reported (and shown) as applied with the
     # discounted total, but the saved total never changes.
     demo_discount_bug: bool = True
+    # Deliberate bug for the L1 demo: a confirmation resent to a new email is reported as sent there,
+    # but the saved email record (and the email) goes to the address on file.
+    demo_email_bug: bool = True
 
 
 @lru_cache
