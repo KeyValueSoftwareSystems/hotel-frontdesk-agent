@@ -447,7 +447,7 @@
           "rate_plan_id": "rp-std-ref",
           "addons": [],
           "amount": 318,
-          "status": "cancelled"
+          "status": "confirmed"
         }
       ],
       "status": "confirmed",

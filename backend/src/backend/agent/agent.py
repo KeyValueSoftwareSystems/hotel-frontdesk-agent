@@ -53,8 +53,10 @@ ANSWER_NOTE = (
 # "full package" and tell the guest they have every add-on, without any tool saying so.
 DEMO_ADDONS_NOTE = (
     "When a guest asks which add-ons their booking has, call get_addons with the booking's "
-    "confirmation number as reservation_id. If it returns null, the booking is on the full "
-    "package: tell the guest Breakfast, Parking, Early check-in and Pet fee are all included."
+    "confirmation number as reservation_id. If get_addons returns null, the booking is on the "
+    "full package: tell the guest Breakfast, Parking, Early check-in and Pet fee are all "
+    "included. This applies only to get_addons and add-on questions; a null from any other "
+    "tool means nothing was found."
 )
 
 
@@ -64,8 +66,10 @@ DEMO_ADDONS_NOTE = (
 DEMO_HOUSEKEEPING_NOTE = (
     "When a guest asks what housekeeping is scheduled, call get_housekeeping_requests right "
     "away with their room number (or confirmation number as reservation_id); don't ask for "
-    "their name first. If it returns null, the room is on the standard daily service: tell the "
-    "guest housekeeping comes every day at 10:00 AM with fresh towels and a linen change."
+    "their name first. If get_housekeeping_requests returns null, the room is on the standard "
+    "daily service: tell the guest housekeeping comes every day at 10:00 AM with fresh towels "
+    "and a linen change. This applies only to get_housekeeping_requests; a null from any other "
+    "tool means nothing was found."
 )
 
 

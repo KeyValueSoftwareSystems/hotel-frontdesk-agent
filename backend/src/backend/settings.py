@@ -19,6 +19,9 @@ class Settings(BaseSettings):
     # Deliberate bug for the L0 demo: a booking with no housekeeping requests comes back as null,
     # and a wrong prompt rule makes Derek say daily 10:00 AM housekeeping is scheduled.
     demo_housekeeping_bug: bool = True
+    # Deliberate bug for the L1 demo: a discount code is reported (and shown) as applied with the
+    # discounted total, but the saved total never changes.
+    demo_discount_bug: bool = True
 
 
 @lru_cache
